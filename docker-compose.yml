@@ -20,8 +20,6 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: edo24123
       POSTGRES_DB: cek_resi
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
