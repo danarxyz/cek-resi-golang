@@ -201,7 +201,7 @@ func sendMail(resi models.Resi) error {
 func (r *ResiController) Show(ctx http.Context) http.Response {
 	// get all data
 	var data []models.Resi
-	if err := facades.Orm().Query().Get(&data); err != nil {
+	if err := facades.Orm().Query().OrderBy("created_at", "asc").Get(&data); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{
 			"success": false,
 			"message": "Failed to get expeditions",

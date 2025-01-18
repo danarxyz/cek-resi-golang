@@ -13,4 +13,5 @@ func Api() {
 	facades.Route().Put("/resi", resiController.UpdateStatus)
 	facades.Route().Delete("/resi", resiController.DeleteExpedition)
 	facades.Route().Get("/check", resiController.CheckExpedition)
+	facades.Route().Get("/resi", resiController.Show)
 }
