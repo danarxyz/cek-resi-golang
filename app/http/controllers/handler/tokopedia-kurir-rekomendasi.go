@@ -3,15 +3,12 @@ package handler
 import (
 	"fmt"
 	expedition "goravel/app/models/expeditions"
+	"goravel/app/utils"
 	"io"
 	"net/http"
-
-	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
-func TokopediaKurirRekomendasi(c *gin.Context, resi string) {
+func tokopediaKurirRekomendasi(resi string) []byte {
 	url := "https://orchestra.tokopedia.com/orc/v1/microsite/tracking?airwaybill=" + resi
 	method := "GET"
 
@@ -20,7 +17,7 @@ func TokopediaKurirRekomendasi(c *gin.Context, resi string) {
 
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	req.Header.Add("accept", "*/*")
 	req.Header.Add("accept-language", "en-US,en;q=0.9,id;q=0.8")
@@ -36,47 +33,38 @@ func TokopediaKurirRekomendasi(c *gin.Context, resi string) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get data from Tokopedia"})
-		return
+		return nil
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read response from Tokopedia"})
-		return
+		return nil
 	}
 
-	responseTokopedia(c, res, body)
+	return body
 }
 
-func responseTokopedia(c *gin.Context, res *http.Response, body []byte) {
+func HandleTokopedia(resi string) expedition.Response {
 	var response expedition.Response
 	var model expedition.TokopediaKurirRekomendasi
 
-	model, err := expedition.UnmarshalTokopediaKurirRekomendasi(body)
+	model, err := expedition.UnmarshalTokopediaKurirRekomendasi(tokopediaKurirRekomendasi(resi))
 
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to unmarshal Tokopedia response"})
-		return
+		return expedition.Response{}
 	}
 
 	response.Expedition = "Tokopedia"
 	response.Resi = model.Data[0].Airwaybill
-	timeFormat := "02 Jan 15:04 WIB"
 	for _, trackingData := range model.Data[0].TrackingData {
-		parseTime, err := time.Parse(timeFormat, trackingData.TrackingTime)
-		if err != nil {
-			fmt.Println(err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse time from Tokopedia"})
-			return
-		}
+		parseTime := utils.ParseTime(trackingData.TrackingTime)
 		response.Details = append(response.Details, expedition.Details{
 			Time:    parseTime,
 			Message: trackingData.Message,
 		})
 	}
 
-	c.JSON(res.StatusCode, response)
+	return response
 }

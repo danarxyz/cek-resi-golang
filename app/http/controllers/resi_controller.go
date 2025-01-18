@@ -26,16 +26,16 @@ func (r *ResiController) Index(ctx http.Context) http.Response {
 	switch type_expedition {
 	case "spx":
 		return ctx.Response().Success().Json(handler.HandleSpx(resi))
-	// case "jnt-cargo":
-	// 	handler.JntCargoExpedition(c, resi)
-	// case "jnt":
-	// 	handler.JntExpedition(c, resi)
-	// case "tokopedia":
-	// 	handler.TokopediaKurirRekomendasi(c, resi)
-	// case "sicepat":
-	// 	handler.SicepatExpedition(c, resi)
-	// case "jne":
-	// 	handler.JNEExpedition(c, resi)
+	case "jnt-cargo":
+		return ctx.Response().Success().Json(handler.HandleJNTCargo(resi))
+	case "jnt":
+		return ctx.Response().Success().Json(handler.HandleJNT(resi))
+	case "tokopedia":
+		return ctx.Response().Success().Json(handler.HandleTokopedia(resi))
+	case "sicepat":
+		return ctx.Response().Success().Json(handler.HandleSicepat(resi))
+	case "jne":
+		return ctx.Response().Success().Json(handler.HandleJNE(resi))
 	default:
 		ctx.Response().Status(400).Json(http.Json{
 			"message": "Ekspedisi tidak ditemukan",
@@ -196,4 +196,21 @@ func sendMail(resi models.Resi) error {
 		return err
 	}
 	return nil
+}
+
+func (r *ResiController) Show(ctx http.Context) http.Response {
+	// get all data
+	var data []models.Resi
+	if err := facades.Orm().Query().Get(&data); err != nil {
+		return ctx.Response().Json(http.StatusInternalServerError, http.Json{
+			"success": false,
+			"message": "Failed to get expeditions",
+			"error":   err.Error(),
+		})
+	}
+	return ctx.Response().Success().Json(http.Json{
+		"success": true,
+		"message": "Expeditions retrieved successfully",
+		"data":    data,
+	})
 }

@@ -8,11 +8,9 @@ import (
 	"net/http"
 
 	"strings"
-
-	"github.com/gin-gonic/gin"
 )
 
-func JntExpedition(c *gin.Context, resi string) {
+func jntExpedition(resi string) []byte {
 
 	url := "https://gql-web.shipper.id/query"
 	method := "POST"
@@ -24,7 +22,7 @@ func JntExpedition(c *gin.Context, resi string) {
 
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	req.Header.Add("accept", "*/*")
 	req.Header.Add("accept-language", "en-US,en;q=0.9,id;q=0.8")
@@ -44,27 +42,24 @@ func JntExpedition(c *gin.Context, resi string) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mendapatkan respons dari API J&T"})
-		return
+		return nil
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membaca data respons dari API J&T"})
-		return
+		return nil
 	}
 
-	responseJnt(c, res, body)
+	return body
 }
 
-func responseJnt(c *gin.Context, res *http.Response, body []byte) {
+func HandleJNT(resi string) expedition.Response {
 	var response expedition.Response
 	var model expedition.JntModel
 
-	if err := json.Unmarshal(body, &model); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membaca data respons dari API J&T"})
-		return
+	if err := json.Unmarshal(jntExpedition(resi), &model); err != nil {
+		return expedition.Response{}
 	}
 
 	response.Resi = model.Data.TrackingDirect[0].ReferenceNo
@@ -79,5 +74,5 @@ func responseJnt(c *gin.Context, res *http.Response, body []byte) {
 		})
 	}
 
-	c.JSON(res.StatusCode, response)
+	return response
 }

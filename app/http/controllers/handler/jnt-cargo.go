@@ -4,17 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	expedition "goravel/app/models/expeditions"
+	"goravel/app/utils"
 	"io"
 	"net/http"
 
 	"strings"
-	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 // Jnt Cargo handler
-func JntCargoExpedition(c *gin.Context, resi string) {
+func jntCargoExpedition(resi string) []byte {
 	url := "https://office.jtcargo.co.id/official/waybill/trackingCustomerByWaybillNo"
 	method := "POST"
 
@@ -29,51 +27,43 @@ func JntCargoExpedition(c *gin.Context, resi string) {
 
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 
 	req.Header.Add("content-type", "application/json")
 
 	res, err := client.Do(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mendapatkan respons dari API J&T Cargo"})
-		return
+		return nil
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membaca data respons dari API J&T Cargo"})
-		return
+		return nil
 	}
 
-	responseJntCargo(c, res, body)
+	return body
 }
 
-func responseJntCargo(c *gin.Context, res *http.Response, body []byte) {
+func HandleJNTCargo(resi string) expedition.Response {
 	var response expedition.Response
 	var model expedition.JntCargoModel
-	err := json.Unmarshal([]byte(body), &model)
+	err := json.Unmarshal([]byte(jntCargoExpedition(resi)), &model)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memparsing data respons dari API J&T Cargo"})
-		return
+		return expedition.Response{}
 	}
 
 	response.Resi = model.Data[0].Keyword
 	response.Expedition = "J&T Cargo"
-	timeFormat := "2006-01-02 15:04:05"
 	for _, detail := range model.Data[0].Details {
-		parsedTime, err := time.Parse(timeFormat, detail.ScanTime)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memparsing waktu dari API J&T Cargo"})
-			return
-		}
+		parsedTime := utils.ParseTime(detail.ScanTime)
 		response.Details = append(response.Details, expedition.Details{
 			Time:    parsedTime,
 			Message: detail.CustomerTracking,
 		})
 	}
 
-	c.JSON(res.StatusCode, response)
+	return response
 }

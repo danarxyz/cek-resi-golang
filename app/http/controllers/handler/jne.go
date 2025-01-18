@@ -8,11 +8,9 @@ import (
 	"net/http"
 
 	"strings"
-
-	"github.com/gin-gonic/gin"
 )
 
-func JNEExpedition(c *gin.Context, resi string) {
+func jneExpedition(resi string) []byte {
 	url := "https://gql-web.shipper.id/query"
 	method := "POST"
 
@@ -23,7 +21,7 @@ func JNEExpedition(c *gin.Context, resi string) {
 
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	req.Header.Add("accept", "*/*")
 	req.Header.Add("accept-language", "en-US,en;q=0.9,id;q=0.8")
@@ -44,32 +42,30 @@ func JNEExpedition(c *gin.Context, resi string) {
 	res, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 
-	responseJNE(c, res, body)
+	return body
 }
 
-func responseJNE(c *gin.Context, res *http.Response, body []byte) {
+func HandleJNE(resi string) expedition.Response {
 	var jne expedition.Jne
 	var response expedition.Response
 
-	err := json.Unmarshal(body, &jne)
+	err := json.Unmarshal(jneExpedition(resi), &jne)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal unmarshal data"})
-		return
+		return expedition.Response{}
 	}
 
 	if len(jne.Data.TrackingDirect) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Data tidak ditemukan"})
-		return
+		return expedition.Response{}
 	}
 
 	data := jne.Data.TrackingDirect[0]
@@ -84,5 +80,5 @@ func responseJNE(c *gin.Context, res *http.Response, body []byte) {
 		})
 	}
 
-	c.JSON(res.StatusCode, response)
+	return response
 }

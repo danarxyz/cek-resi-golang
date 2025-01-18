@@ -4,16 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	expedition "goravel/app/models/expeditions"
+	"goravel/app/utils"
 	"io"
 	"net/http"
 
 	"strings"
-	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
-func SicepatExpedition(c *gin.Context, resi string) {
+func sicepatExpedition(resi string) []byte {
 	url := "https://paketmu.com/kurir/wp-admin/admin-ajax.php"
 	method := "POST"
 
@@ -24,7 +22,7 @@ func SicepatExpedition(c *gin.Context, resi string) {
 
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	req.Header.Add("accept", "*/*")
 	req.Header.Add("accept-language", "en-US,en;q=0.9,id;q=0.8")
@@ -44,28 +42,25 @@ func SicepatExpedition(c *gin.Context, resi string) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mendapatkan respons dari API Sicepat"})
-		return
+		return nil
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membaca data respons dari API Sicepat"})
-		return
+		return nil
 	}
 
-	responseSicepat(c, res, body)
+	return body
 }
 
-func responseSicepat(c *gin.Context, res *http.Response, body []byte) {
+func HandleSicepat(resi string) expedition.Response {
 	var response expedition.Response
 	var model expedition.Sicepat
-	err := json.Unmarshal([]byte(body), &model)
+	err := json.Unmarshal([]byte(sicepatExpedition(resi)), &model)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memparsing data respons dari API Sicepat"})
-		return
+		return expedition.Response{}
 	}
 
 	response.Resi = model.Rajaongkir.Query.Waybill
@@ -75,19 +70,10 @@ func responseSicepat(c *gin.Context, res *http.Response, body []byte) {
 	for i := len(details) - 1; i >= 0; i-- {
 		detail := details[i]
 		response.Details = append(response.Details, expedition.Details{
-			Time:    parseTime(detail.ManifestDate + " " + detail.ManifestTime),
+			Time:    utils.ParseTime(detail.ManifestDate + " " + detail.ManifestTime),
 			Message: detail.ManifestDescription,
 		})
 	}
 
-	c.JSON(res.StatusCode, response)
-}
-
-func parseTime(dateTimeStr string) time.Time {
-	layout := "2006-01-02 15:04:05"
-	t, err := time.Parse(layout, dateTimeStr)
-	if err != nil {
-		return time.Time{}
-	}
-	return t
+	return response
 }
