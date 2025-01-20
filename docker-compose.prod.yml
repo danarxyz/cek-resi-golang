@@ -1,7 +1,7 @@
 services:
   goravel:
     container_name: cek-resi-app
-    image: edoaurahman/cek-resi-goravel:2.0.1
+    image: edoaurahman/cek-resi-goravel:latest
     ports:
       - "3001:3000"
     depends_on:
@@ -13,18 +13,18 @@ services:
     restart: always
 
   postgres:
-    image: postgres:latest
+    image: postgres:14.15-alpine3.21
     container_name: cek-resi-postgres
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: edo24123
-      POSTGRES_DB: cek_resi
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
-    image: redis:latest
-    container_name: cek-resi-redis2
+    image: redis:7.2.7-alpine
+    container_name: cek-resi-redis
     volumes:
       - redis_data:/data
 
