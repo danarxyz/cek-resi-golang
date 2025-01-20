@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+option go_package = "goravel/app/protos";
+package protos;
+
+service ResiService {
+  rpc CreateResi(CreateResiRequest) returns (ResiResponse);
+  rpc GetResi(GetResiRequest) returns (ResiResponse);
+  rpc UpdateResi(UpdateResiRequest) returns (ResiResponse);
+  rpc DeleteResi(DeleteResiRequest) returns (DeleteResiResponse);
+  rpc GetAllResi(Empty) returns (ResiListResponse);
+}
+
+message Resi {
+  int32 id = 1;
+  string tracking_num = 2;
+  string expedition = 3;
+  string status = 4;
+  string details = 5;
+  string email = 6;
+}
+
+message CreateResiRequest {
+  string tracking_num = 1;
+  string expedition = 2;
+  string email = 3;
+}
+
+message GetResiRequest { string tracking_num = 1; }
+
+message UpdateResiRequest {
+  int32 id = 1;
+  string tracking_num = 2;
+  string expedition = 3;
+  string status = 4;
+  string details = 5;
+  string email = 6;
+}
+
+message DeleteResiRequest { string tracking_num = 1; }
+
+message ResiResponse { Resi resi = 1; }
+
+message DeleteResiResponse { bool success = 1; }
+
+message ResiListResponse { repeated Resi resis = 1; }
+
+message Empty {}
