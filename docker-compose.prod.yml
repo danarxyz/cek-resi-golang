@@ -10,7 +10,7 @@ services:
     environment:
       - DB_HOST=postgres
       - REDIS_HOST=redis
-    restart: always
+    restart: on-failure
     cpus: "0.4"
 
   postgres:
