@@ -74,7 +74,7 @@ func (r *ResiController) AddExpedition(ctx http.Context) http.Response {
 		})
 	}
 	// get details
-	details := handler.HandleExpediton(resi, type_expedition).GetNewStatus().Message
+	details := handler.HandleExpediton(type_expedition, resi).GetNewStatus().Message
 	newData := &models.Resi{
 		TrackingNum: resi,
 		Expedition:  type_expedition,

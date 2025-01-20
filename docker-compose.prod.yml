@@ -11,6 +11,7 @@ services:
       - DB_HOST=postgres
       - REDIS_HOST=redis
     restart: always
+    cpus: "0.4"
 
   postgres:
     image: postgres:14.15-alpine3.21
