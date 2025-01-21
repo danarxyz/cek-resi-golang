@@ -4,9 +4,9 @@ import (
 	"goravel/app/grpc/controllers"
 	"goravel/app/protos"
 
-	"github.com/goravel/framework/facades"
+	"google.golang.org/grpc"
 )
 
-func Grpc() {
-	protos.RegisterResiServiceServer(facades.Grpc().Server(), controllers.NewResiController())
+func Grpc(server *grpc.Server) {
+	protos.RegisterResiServiceServer(server, controllers.NewResiController())
 }

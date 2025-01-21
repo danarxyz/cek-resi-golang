@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"net"
 	"time"
 
 	"github.com/goodsign/monday"
@@ -33,4 +34,12 @@ func LoadTLSCredentials() (credentials.TransportCredentials, error) {
 	}
 
 	return credentials.NewTLS(config), nil
+}
+
+func CreateListener(host string) (net.Listener, error) {
+	listener, err := net.Listen("tcp", host)
+	if err != nil {
+		log.Fatalln("Failed to create listener:", err)
+	}
+	return listener, nil
 }

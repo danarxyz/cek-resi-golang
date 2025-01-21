@@ -8,6 +8,7 @@ import (
 
 	"github.com/goravel/framework/facades"
 
+	"goravel/app/grpc"
 	"goravel/bootstrap"
 )
 
@@ -36,7 +37,7 @@ func main() {
 		host := facades.Config().GetString("grpc.host")
 		port := facades.Config().GetString("grpc.port")
 		address := fmt.Sprintf("%s:%s", host, port)
-		if err := facades.Grpc().Run(address); err != nil {
+		if err := grpc.CustomGrpcServer(address); err != nil {
 			facades.Log().Errorf("Grpc run error: %v", err)
 		}
 	}()
