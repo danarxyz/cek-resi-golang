@@ -4,6 +4,7 @@ services:
     image: edoaurahman/cek-resi-app:latest
     ports:
       - "3001:3000"
+      - "50051:50051"
     depends_on:
       - postgres
       - redis
