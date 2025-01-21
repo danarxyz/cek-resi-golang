@@ -37,6 +37,7 @@ COPY --from=builder /build/database/ /www/database/
 COPY --from=builder /build/public/ /www/public/
 COPY --from=builder /build/storage/ /www/storage/
 COPY --from=builder /build/.env /www/.env
+COPY --from=builder /build/certs /www/certs
 
 # Set the entrypoint
 ENTRYPOINT ["/www/main"]
