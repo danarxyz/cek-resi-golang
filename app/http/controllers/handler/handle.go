@@ -12,6 +12,12 @@ func HandleExpediton(expedition_type string, resi string) expedition.Response {
 		return HandleTokopedia(resi)
 	case "jnt":
 		return HandleJNT(resi)
+	case "jnt-cargo":
+		return HandleJNTCargo(resi)
+	case "jne":
+		return HandleJNE(resi)
+	case "sicepat":
+		return HandleSicepat(resi)
 	default:
 		return expedition.Response{}
 	}
