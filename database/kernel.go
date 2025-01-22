@@ -14,6 +14,7 @@ type Kernel struct {
 func (kernel Kernel) Migrations() []schema.Migration {
 	return []schema.Migration{
 		&migrations.M20250117093802CreateResiTable{},
+		&migrations.M20250122103527AddPackageNameToResiTable{},
 	}
 }
 
