@@ -6,6 +6,7 @@ import (
 
 type Resi struct {
 	orm.Model
+	PackageName string
 	TrackingNum string
 	Expedition  string
 	Status      string

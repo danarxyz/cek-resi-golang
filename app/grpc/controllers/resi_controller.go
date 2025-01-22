@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"goravel/app/http/controllers"
 	"goravel/app/http/controllers/handler"
 	"goravel/app/models"
 	"goravel/app/protos"
@@ -21,6 +22,7 @@ func (r *ResiController) CreateResi(ctx context.Context, req *protos.CreateResiR
 	// get details from request
 	resi_details := handler.HandleExpediton(req.TrackingNum, req.Expedition).GetNewStatus().Message
 	resi := models.Resi{
+		PackageName: req.PackageName,
 		TrackingNum: req.TrackingNum,
 		Expedition:  req.Expedition,
 		Status:      "tracking",
@@ -34,6 +36,7 @@ func (r *ResiController) CreateResi(ctx context.Context, req *protos.CreateResiR
 
 	return &protos.ResiResponse{Resi: &protos.Resi{
 		Id:          int32(resi.ID),
+		PackageName: resi.PackageName,
 		TrackingNum: resi.TrackingNum,
 		Expedition:  resi.Expedition,
 		Status:      resi.Status,
@@ -50,6 +53,7 @@ func (r *ResiController) GetResi(ctx context.Context, req *protos.GetResiRequest
 
 	return &protos.ResiResponse{Resi: &protos.Resi{
 		Id:          int32(resi.ID),
+		PackageName: resi.PackageName,
 		TrackingNum: resi.TrackingNum,
 		Expedition:  resi.Expedition,
 		Status:      resi.Status,
@@ -65,7 +69,6 @@ func (r *ResiController) UpdateResi(ctx context.Context, req *protos.UpdateResiR
 	}
 
 	resi.Status = req.Status
-	resi.Details = req.Details
 
 	if err := facades.Orm().Query().Save(&resi); err != nil {
 		return nil, err
@@ -73,6 +76,7 @@ func (r *ResiController) UpdateResi(ctx context.Context, req *protos.UpdateResiR
 
 	return &protos.ResiResponse{Resi: &protos.Resi{
 		Id:          int32(resi.ID),
+		PackageName: resi.PackageName,
 		TrackingNum: resi.TrackingNum,
 		Expedition:  resi.Expedition,
 		Status:      resi.Status,
@@ -105,6 +109,7 @@ func (r *ResiController) GetAllResi(ctx context.Context, req *protos.Empty) (*pr
 	for _, resi := range resis {
 		resiResponses = append(resiResponses, &protos.Resi{
 			Id:          int32(resi.ID),
+			PackageName: resi.PackageName,
 			TrackingNum: resi.TrackingNum,
 			Expedition:  resi.Expedition,
 			Status:      resi.Status,
@@ -115,4 +120,9 @@ func (r *ResiController) GetAllResi(ctx context.Context, req *protos.Empty) (*pr
 
 	return &protos.ResiListResponse{Resis: resiResponses}, nil
 
+}
+
+func (r *ResiController) CheckAllResi(ctx context.Context, req *protos.Empty) (*protos.CheckAllResiResponse, error) {
+	controllers.CheckExpedition()
+	return &protos.CheckAllResiResponse{Success: true}, nil
 }

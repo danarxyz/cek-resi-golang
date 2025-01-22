@@ -9,6 +9,7 @@ service ResiService {
   rpc UpdateResi(UpdateResiRequest) returns (ResiResponse);
   rpc DeleteResi(DeleteResiRequest) returns (DeleteResiResponse);
   rpc GetAllResi(Empty) returns (ResiListResponse);
+  rpc CheckAllResi(Empty) returns (CheckAllResiResponse);
 }
 
 message Resi {
@@ -18,23 +19,21 @@ message Resi {
   string status = 4;
   string details = 5;
   string email = 6;
+  string package_name = 7;
 }
 
 message CreateResiRequest {
   string tracking_num = 1;
   string expedition = 2;
   string email = 3;
+  string package_name = 4;
 }
 
 message GetResiRequest { string tracking_num = 1; }
 
 message UpdateResiRequest {
-  int32 id = 1;
   string tracking_num = 2;
-  string expedition = 3;
   string status = 4;
-  string details = 5;
-  string email = 6;
 }
 
 message DeleteResiRequest { string tracking_num = 1; }
@@ -46,3 +45,5 @@ message DeleteResiResponse { bool success = 1; }
 message ResiListResponse { repeated Resi resis = 1; }
 
 message Empty {}
+
+message CheckAllResiResponse { bool success = 1; }

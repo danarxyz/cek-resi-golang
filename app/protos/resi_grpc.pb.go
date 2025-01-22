@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ResiService_CreateResi_FullMethodName = "/protos.ResiService/CreateResi"
-	ResiService_GetResi_FullMethodName    = "/protos.ResiService/GetResi"
-	ResiService_UpdateResi_FullMethodName = "/protos.ResiService/UpdateResi"
-	ResiService_DeleteResi_FullMethodName = "/protos.ResiService/DeleteResi"
-	ResiService_GetAllResi_FullMethodName = "/protos.ResiService/GetAllResi"
+	ResiService_CreateResi_FullMethodName   = "/protos.ResiService/CreateResi"
+	ResiService_GetResi_FullMethodName      = "/protos.ResiService/GetResi"
+	ResiService_UpdateResi_FullMethodName   = "/protos.ResiService/UpdateResi"
+	ResiService_DeleteResi_FullMethodName   = "/protos.ResiService/DeleteResi"
+	ResiService_GetAllResi_FullMethodName   = "/protos.ResiService/GetAllResi"
+	ResiService_CheckAllResi_FullMethodName = "/protos.ResiService/CheckAllResi"
 )
 
 // ResiServiceClient is the client API for ResiService service.
@@ -35,6 +36,7 @@ type ResiServiceClient interface {
 	UpdateResi(ctx context.Context, in *UpdateResiRequest, opts ...grpc.CallOption) (*ResiResponse, error)
 	DeleteResi(ctx context.Context, in *DeleteResiRequest, opts ...grpc.CallOption) (*DeleteResiResponse, error)
 	GetAllResi(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ResiListResponse, error)
+	CheckAllResi(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CheckAllResiResponse, error)
 }
 
 type resiServiceClient struct {
@@ -95,6 +97,16 @@ func (c *resiServiceClient) GetAllResi(ctx context.Context, in *Empty, opts ...g
 	return out, nil
 }
 
+func (c *resiServiceClient) CheckAllResi(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CheckAllResiResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckAllResiResponse)
+	err := c.cc.Invoke(ctx, ResiService_CheckAllResi_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ResiServiceServer is the server API for ResiService service.
 // All implementations must embed UnimplementedResiServiceServer
 // for forward compatibility.
@@ -104,6 +116,7 @@ type ResiServiceServer interface {
 	UpdateResi(context.Context, *UpdateResiRequest) (*ResiResponse, error)
 	DeleteResi(context.Context, *DeleteResiRequest) (*DeleteResiResponse, error)
 	GetAllResi(context.Context, *Empty) (*ResiListResponse, error)
+	CheckAllResi(context.Context, *Empty) (*CheckAllResiResponse, error)
 	mustEmbedUnimplementedResiServiceServer()
 }
 
@@ -128,6 +141,9 @@ func (UnimplementedResiServiceServer) DeleteResi(context.Context, *DeleteResiReq
 }
 func (UnimplementedResiServiceServer) GetAllResi(context.Context, *Empty) (*ResiListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllResi not implemented")
+}
+func (UnimplementedResiServiceServer) CheckAllResi(context.Context, *Empty) (*CheckAllResiResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckAllResi not implemented")
 }
 func (UnimplementedResiServiceServer) mustEmbedUnimplementedResiServiceServer() {}
 func (UnimplementedResiServiceServer) testEmbeddedByValue()                     {}
@@ -240,6 +256,24 @@ func _ResiService_GetAllResi_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ResiService_CheckAllResi_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResiServiceServer).CheckAllResi(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResiService_CheckAllResi_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResiServiceServer).CheckAllResi(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ResiService_ServiceDesc is the grpc.ServiceDesc for ResiService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +300,10 @@ var ResiService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAllResi",
 			Handler:    _ResiService_GetAllResi_Handler,
+		},
+		{
+			MethodName: "CheckAllResi",
+			Handler:    _ResiService_CheckAllResi_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
