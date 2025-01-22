@@ -25,11 +25,13 @@ func (receiver *Notify) Content() *mail.Content {
 	view := fmt.Sprintf(`
         <html>
         <body>
+			<h1>Cek Paket Anda</h1>
+			<p>Package Name: %s</p>
             <p>Resi: %s</p>
             <p>Detail: %s</p>
         </body>
         </html>
-    `, receiver.Resi.TrackingNum, receiver.Resi.Details)
+    `, receiver.PackageName, receiver.Resi.TrackingNum, receiver.Resi.Details)
 	return &mail.Content{Html: view}
 }
 
