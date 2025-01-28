@@ -20,7 +20,7 @@ func NewResiController() *ResiController {
 
 func (r *ResiController) CreateResi(ctx context.Context, req *protos.CreateResiRequest) (*protos.ResiResponse, error) {
 	// get details from request
-	resi_details := handler.HandleExpediton(req.TrackingNum, req.Expedition).GetNewStatus().Message
+	resi_details := handler.HandleExpediton(req.Expedition, req.TrackingNum).GetNewStatus().Message
 	resi := models.Resi{
 		PackageName: req.PackageName,
 		TrackingNum: req.TrackingNum,
