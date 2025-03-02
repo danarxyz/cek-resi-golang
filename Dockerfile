@@ -35,6 +35,10 @@ RUN apk add --no-cache \
     redis \
     supervisor
 
+USER postgres
+RUN initdb -D /var/lib/postgresql/data
+
+USER root
 # Set working directory
 WORKDIR /www
 
@@ -46,7 +50,16 @@ COPY --from=builder /build/storage/ /www/storage/
 COPY --from=builder /build/.env /www/.env
 COPY --from=builder /build/certs /www/certs
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY postgresql.conf /etc/postgresql/postgresql.conf
+RUN mkdir /run/postgresql && chown postgres: /run/postgresql
 
+USER postgres
+# create user and database
+RUN /usr/bin/pg_ctl -D /var/lib/postgresql/data start && \
+    psql --command "CREATE USER goravel WITH SUPERUSER PASSWORD '1234';" && \
+    createdb -O goravel goravel
+
+USER root
 # Expose necessary ports
 EXPOSE 3000 50051 5432 6379
 
