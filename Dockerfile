@@ -61,7 +61,7 @@ RUN /usr/bin/pg_ctl -D /var/lib/postgresql/data start && \
 
 USER root
 # Expose necessary ports
-EXPOSE 3000 50051
+EXPOSE 3000 50051 5432 6379
 
 # Run Supervisor
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
