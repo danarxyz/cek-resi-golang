@@ -1,5 +1,6 @@
 services:
   goravel:
+    command: ./main
     container_name: cek-resi-app
     image: edoaurahman/cek-resi-app:latest
     ports:
