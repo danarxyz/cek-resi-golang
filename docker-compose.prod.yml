@@ -3,16 +3,60 @@ services:
     container_name: cek-resi-app
     image: edoaurahman/cek-resi-app:latest
     ports:
-      - "3001:3000"
-      - "50051:50051"
+      - "${APP_PORT}:${APP_PORT}"
+      - "${GRPC_PORT}:${GRPC_PORT}"
     depends_on:
       - postgres
       - redis
     environment:
-      - DB_HOST=postgres
-      - REDIS_HOST=redis
+      - APP_NAME=${APP_NAME}
+      - APP_ENV=${APP_ENV}
+      - APP_KEY=${APP_KEY}
+      - APP_DEBUG=${APP_DEBUG}
+      - APP_URL=${APP_URL}
+      - APP_HOST=${APP_HOST}
+      - APP_PORT=${APP_PORT}
+
+      - GRPC_HOST=${GRPC_HOST}
+      - GRPC_PORT=${GRPC_PORT}
+
+      - JWT_SECRET=${JWT_SECRET}
+
+      - LOG_CHANNEL=${LOG_CHANNEL}
+      - LOG_LEVEL=${LOG_LEVEL}
+
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+      - SESSION_DRIVER=${SESSION_DRIVER}
+      - SESSION_LIFETIME=${SESSION_LIFETIME}
+
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_PORT=${REDIS_PORT}
+
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME}
+
+      - SPX_TOKEN=${SPX_TOKEN}
+
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION}
+      - CERTS_DIR=${CERTS_DIR}
+      - SERVER_CERT=${SERVER_CERT}
+      - SERVER_KEY=${SERVER_KEY}
     restart: on-failure
     cpus: "0.4"
+    volumes:
+      - goravel:/www
+      - ${CERTS_DIR:-./certs}:/www/certs
 
   postgres:
     image: postgres:14.15-alpine3.21
@@ -33,3 +77,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  goravel:
