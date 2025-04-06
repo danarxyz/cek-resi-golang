@@ -29,6 +29,10 @@ RUN go build --ldflags "-extldflags -static" -o main .
 FROM alpine:latest
 
 USER root
+
+# clean up
+RUN rm -rf /var/cache/apk/*
+
 # Set working directory
 WORKDIR /www
 
@@ -36,13 +40,8 @@ WORKDIR /www
 COPY --from=builder /build/main /www/
 COPY --from=builder /build/database/ /www/database/
 COPY --from=builder /build/public/ /www/public/
-COPY --from=builder /build/storage/ /www/storage/
-COPY --from=builder /build/.env /www/.env
-COPY --from=builder /build/certs /www/certs
+COPY --from=builder /build/storage/ /www/storage/   
 
 USER root
 # Expose necessary ports
 EXPOSE 3000 50051
-
-# Run Supervisor
-ENTRYPOINT [ "/www/main" ]

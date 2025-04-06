@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/goodsign/monday"
+	"github.com/goravel/framework/facades"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -22,7 +23,9 @@ func ParseTime(dateTimeStr string) time.Time {
 }
 
 func LoadTLSCredentials() (credentials.TransportCredentials, error) {
-	serverCert, err := tls.LoadX509KeyPair("certs/server-cert.pem", "certs/server-key.pem")
+	env := facades.Config()
+
+	serverCert, err := tls.LoadX509KeyPair(env.GetString("SERVER_CERT", "certs/server-cert.pem"), env.GetString("SERVER_KEY", "certs/server-key.pem"))
 	if err != nil {
 		log.Fatalln("Failed to read server certificate:", err)
 		return nil, err
