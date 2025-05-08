@@ -1,6 +1,6 @@
 networks:
-  - proxy:
-     external: true
+  proxy:
+    external: true
 services:
   goravel:
     command: ./main
