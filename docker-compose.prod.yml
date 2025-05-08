@@ -1,3 +1,6 @@
+networks:
+  - proxy:
+     external: true
 services:
   goravel:
     command: ./main
@@ -58,7 +61,8 @@ services:
     volumes:
       - goravel:/www
       - ${CERTS_DIR:-./certs}:/www/certs
-
+    networks:
+      - proxy
   postgres:
     image: postgres:14.15-alpine3.21
     container_name: cek-resi-postgres
