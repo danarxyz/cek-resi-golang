@@ -1,5 +1,5 @@
 networks:
-  proxy:
+  komodo_default:
     external: true
   cek_resi:
 services:
@@ -63,7 +63,7 @@ services:
       - goravel:/www
       - ${CERTS_DIR:-./certs}:/www/certs
     networks:
-      - proxy
+      - komodo_default
       - cek_resi
   postgres:
     image: postgres:14.15-alpine3.21
