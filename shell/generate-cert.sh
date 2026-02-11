@@ -19,7 +19,7 @@ cd "$DIR" || exit
 rm *.pem 2>/dev/null
 
 # 1. Generate CA's private key and self-signed certificate
-openssl req -x509 -newkey rsa:4096 -days 365 -nodes -keyout ca-key.pem -out ca-cert.pem -subj "/C=ID/ST=East Java/L=Bojonegoro/O=Edodev/OU=Edodev/CN=*.edodev.my.id/emailAddress=edoaurahman@gmail.com"
+openssl req -x509 -newkey rsa:4096 -days 365 -nodes -keyout ca-key.pem -out ca-cert.pem -subj "/C=ID/ST=East Java/L=Bojonegoro/O=Edodev/OU=Edodev/CN=*.edodev.tech/emailAddress=edoaurahman@gmail.com"
 if [ $? -ne 0 ]; then
     echo "Failed to generate CA's private key and self-signed certificate."
     exit 1
@@ -29,7 +29,7 @@ echo "CA's self-signed certificate"
 openssl x509 -in ca-cert.pem -noout -text
 
 # 2. Generate web server's private key and certificate signing request (CSR)
-openssl req -newkey rsa:4096 -nodes -keyout server-key.pem -out server-req.pem -subj "/C=ID/ST=East Java/L=Bojonegoro/O=Edodev/OU=Edodev/CN=*.edodev.my.id/emailAddress=edoaurahman@gmail.com"
+openssl req -newkey rsa:4096 -nodes -keyout server-key.pem -out server-req.pem -subj "/C=ID/ST=East Java/L=Bojonegoro/O=Edodev/OU=Edodev/CN=*.edodev.tech/emailAddress=edoaurahman@gmail.com"
 if [ $? -ne 0 ]; then
     echo "Failed to generate web server's private key and CSR."
     exit 1
