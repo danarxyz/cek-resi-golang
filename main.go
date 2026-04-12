@@ -1,14 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/goravel/framework/facades"
 
-	"goravel/app/grpc"
 	"goravel/bootstrap"
 )
 
@@ -33,14 +31,14 @@ func main() {
 	}()
 
 	// Start grpc server by facades.Grpc().
-	go func() {
-		host := facades.Config().GetString("grpc.host")
-		port := facades.Config().GetString("grpc.port")
-		address := fmt.Sprintf("%s:%s", host, port)
-		if err := grpc.CustomGrpcServer(address); err != nil {
-			facades.Log().Errorf("Grpc run error: %v", err)
-		}
-	}()
+	// go func() {
+	// 	host := facades.Config().GetString("grpc.host")
+	// 	port := facades.Config().GetString("grpc.port")
+	// 	address := fmt.Sprintf("%s:%s", host, port)
+	// 	if err := grpc.CustomGrpcServer(address); err != nil {
+	// 		facades.Log().Errorf("Grpc run error: %v", err)
+	// 	}
+	// }()
 
 	// Listen for the OS signal
 	go func() {

@@ -51,9 +51,6 @@ services:
       - SPX_TOKEN=${SPX_TOKEN}
 
       - QUEUE_CONNECTION=${QUEUE_CONNECTION}
-      - CERTS_DIR=${CERTS_DIR}
-      - SERVER_CERT=${SERVER_CERT}
-      - SERVER_KEY=${SERVER_KEY}
     volumes:
       - goravel:/www
       - ${CERTS_DIR:-./certs}:/www/certs
