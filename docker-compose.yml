@@ -1,7 +1,7 @@
+version: '3'
+
 services:
   goravel:
-    command: ./main
-    container_name: cek-resi-app
     build:
       context: .
     ports:

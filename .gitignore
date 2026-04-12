@@ -3,3 +3,4 @@
 .env
 storage/framework
 .kilo
+!.gitignore
