@@ -48,3 +48,8 @@ func (receiver *Notify) Envelope() *mail.Envelope {
 func (receiver *Notify) Queue() *mail.Queue {
 	return &mail.Queue{}
 }
+
+// Headers adds custom headers to the mail
+func (receiver *Notify) Headers() map[string]string {
+	return map[string]string{}
+}

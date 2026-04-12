@@ -50,7 +50,11 @@ func (r *ResiController) AddExpedition(ctx http.Context) http.Response {
 	resi := ctx.Request().Input("sls_tracking_number")
 	type_expedition := ctx.Request().Input("type")
 	email := ctx.Request().Input("email")
-	validation, err := facades.Validation().Make(ctx.Request().All(), map[string]string{
+	validation, err := facades.Validation().Make(ctx.Context(), map[string]any{
+		"sls_tracking_number": resi,
+		"type":                type_expedition,
+		"email":               email,
+	}, map[string]string{
 		"sls_tracking_number": "required|string",
 		"type":                "required|string",
 		"email":               "required|email",
