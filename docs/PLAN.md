@@ -93,11 +93,21 @@ IdleConnTimeout: 90s
 MaxIdleConnsPerHost: 50
 ```
 
-### Out of scope Phase 1
-- OpenTelemetry tracing (defer to Phase 2 unless multi-hop ambiguity emerges)
-- Global cluster rate limit (Phase 2; in-memory per-replica is documented as non-global)
-- `dead_tasks` persistence table (decision boundary locked; schema not designed until archived inspection proves insufficient)
-- Alert thresholds for archived/error rate (need 1-2 weeks of prod baseline)
+### External provider (locked)
+- Tracking backend: **BinderByte** aggregator API (single upstream covering 24 carriers including all currently supported).
+- Base URL: `https://api.binderbyte.com`. Endpoint: `GET /v1/track?api_key&courier&awb`.
+- Auth via `BINDERBYTE_API_KEY` env var (required at boot).
+- Quota poller hits `GET /v1/checkQuota` periodically (5 min default) → `binderbyte_quota_remaining` metric.
+- Single circuit breaker per upstream (not per-carrier — single vendor).
+- Response cache mandatory: Redis-backed, TTL by terminal status (DELIVERED → 24h, in-transit → 5–10 min). Cache hits do not count against BB quota.
+- `SPX_TOKEN` removed — SPX tracking now routes through BinderByte's `spx` courier code.
+
+### Out of scope Phase 1 cycle (deferred)
+- OpenTelemetry tracing (defer to Phase 2 unless multi-hop ambiguity emerges).
+- Global cluster rate limit (Phase 2; in-memory per-replica is documented as non-global).
+- `dead_tasks` persistence table (decision boundary locked; schema not designed until archived inspection proves insufficient).
+- Alert thresholds for archived/error rate (need 1-2 weeks of prod baseline).
+- Cek ongkir endpoint (`POST /v1/cost`) and wilayah reference data (`GET /wilayah/*`) — both BinderByte features. Tracked as Phase 8+.
 
 ---
 
@@ -219,47 +229,71 @@ cmd/server/main.go           # add: db open, migrate, ping, service ctor
 
 ---
 
-## Phase 3 — Expedition clients + circuit breaker
+## Phase 3 — Expedition: BinderByte client + breaker + cache
 
-**Goal**: 6 tracker clients ported, each behind a `Tracker` interface, all guarded by per-carrier circuit breaker. No business changes vs current behavior.
+**Goal**: single tracking backend (BinderByte) reachable through a `Tracker` interface, guarded by one circuit breaker on the BB upstream, with Redis-backed response cache to conserve quota. 24 carriers supported via courier-code dispatch.
 
-**Depends on**: Phase 1.
+**Depends on**: Phase 1 (errs, slog, metrics).
 
 ### Scope (in)
-- `internal/expedition/types.go` — `Carrier` enum, `Tracking` result type (mirror of current `Response`)
-- `internal/expedition/tracker.go` — `Tracker` interface, `Dispatcher` map[Carrier]Tracker
-- Per-carrier clients: `spx.go, jnt.go, jntcargo.go, jne.go, sicepat.go, tokopedia.go`. Single shared `http.Client` with mandatory timeouts above.
-- `internal/expedition/breaker.go` — wraps each tracker with `gobreaker` instance.
-- Boot-defaults: `MaxRequests=1, Interval=60s, Timeout=30s, ReadyToTrip=ConsecutiveFailures>=5`. Labeled `BOOT_DEFAULTS_v0`.
-- Error mapping: any non-2xx upstream → `errs.New(CodeCarrierUnavailable, "")` with `InternalCtx="carrier=NAME http=503"`. Breaker open → same code, `InternalCtx="breaker open"`.
-- Metric: `expedition_calls_total{carrier,result}`, `expedition_breaker_state{carrier}`.
+- `internal/expedition/types.go` — `Carrier` enum (24 entries) and `Tracking` domain type (uniform shape: summary + history). `Carrier` is a typed string mapped to BB courier code via a constant table.
+- `internal/expedition/tracker.go` — `Tracker` interface with one method: `Track(ctx, Carrier, awb) (*Tracking, error)`.
+- `internal/expedition/binderbyte/client.go` — single HTTP client. Uses shared `http.Client` from §0 mandatory tuning. Builds `GET /v1/track`, parses uniform response.
+- `internal/expedition/binderbyte/mapper.go` — BB JSON → domain `Tracking`. Status-field parser:
+  - `body.status == 200` → success
+  - `body.status == 400 && message ~ "Data not found"` → `errs.New(CodeNotFound, "")`
+  - `body.status == 401/403` → `errs.New(CodeUnauthenticated, "")` + `InternalCtx="bb api_key invalid or quota exhausted"`
+  - HTTP timeout or 5xx → `errs.New(CodeCarrierUnavailable, "")` + `InternalCtx="bb http=<code>"` (retry-able)
+  - Otherwise → `errs.Wrap(CodeInternal, raw, "bb unknown response")`
+- `internal/expedition/breaker.go` — single `gobreaker` instance for the BB upstream. Settings labeled `BOOT_DEFAULTS_v0`: `MaxRequests=1, Interval=60s, Timeout=30s, ReadyToTrip=ConsecutiveFailures>=5`. Breaker-open → `CodeCarrierUnavailable` + `InternalCtx="bb breaker open"`.
+- `internal/expedition/cache.go` — Redis-backed response cache (uses same Redis as asynq):
+  - Key: `track:<carrier>:<awb>`
+  - TTL by terminal status: `DELIVERED|RETURNED` → 24h; in-transit → 10m; not-found → 1m (negative cache, short).
+  - Cache hits never call BB. Cache miss → call BB → store on success only.
+  - On cache miss + breaker-open → return last cached entry if any, marked stale (else error).
+- `internal/expedition/dispatcher.go` — orders Cache → Breaker → BinderByte client. Composition done in `main.go`, no runtime DI.
+- `internal/expedition/quota.go` — periodic poller hitting `GET /v1/checkQuota` every 5 min. Result → metric `binderbyte_quota_remaining`. Owned by Phase 6 scheduler in practice; stub interface here.
+- Metrics: `expedition_calls_total{carrier,result}`, `expedition_breaker_state` (gauge), `binderbyte_cache_total{result=hit|miss|stale}`, `binderbyte_quota_remaining`.
 
 ### Scope (out)
-- Wiring into HTTP/gRPC (Phase 4/5).
-- Async polling (Phase 6).
+- Wiring into HTTP/gRPC handlers (Phase 4/5).
+- Async polling job that consumes the tracker (Phase 6).
+- BB ongkir (`/v1/cost`) and wilayah (`/wilayah/*`) endpoints — Phase 8+.
 
 ### Deliverables
 ```
 internal/expedition/
-  types.go
-  tracker.go
-  dispatcher.go
-  breaker.go
-  client.go                  # shared http.Client constructor
-  spx.go, jnt.go, jntcargo.go, jne.go, sicepat.go, tokopedia.go
-  *_test.go                  # use httptest.Server stub upstream
+  types.go                   # Carrier enum + BB code table + Tracking domain
+  tracker.go                 # Tracker interface
+  dispatcher.go              # Cache → Breaker → BB chain ctor
+  breaker.go                 # single gobreaker for BB
+  cache.go                   # Redis response cache w/ status-aware TTL
+  quota.go                   # quota poller stub + metric
+  binderbyte/
+    client.go                # HTTP client; calls GET /v1/track
+    mapper.go                # BB JSON → domain Tracking + error mapping
+    client_test.go           # golden tests per carrier (24 fixtures from postman)
+    mapper_test.go           # body.status parsing matrix
+internal/config/config.go    # add BINDERBYTE_API_KEY, BINDERBYTE_BASE_URL
 ```
 
 ### Acceptance / audit checklist
-- [ ] All 6 trackers parse current production responses (golden file tests).
-- [ ] Upstream timeout → call returns within ~Timeout, not goroutine leak.
-- [ ] 5 consecutive failures → breaker opens; subsequent calls fail-fast with `CodeCarrierUnavailable`, `InternalCtx="breaker open"`.
-- [ ] No carrier name leak to `PublicDetail`.
-- [ ] No business decisions in this package (idempotent fetch only).
-- [ ] `SPX_TOKEN` read via config, not facade or env-direct.
+- [ ] All 24 BB courier codes mapped in `Carrier` enum; round-trip `Carrier ↔ BB code` covered by table-driven test.
+- [ ] Golden fixtures (taken from `BinderByte.postman_collection.json` Success samples — file itself gitignored) parse into domain `Tracking` without data loss for at least the 6 current carriers, plus 3 representative new ones (POS, TIKI, Anteraja).
+- [ ] `body.status` parsing matrix: 200/400-not-found/401/403/malformed/5xx all produce expected `errs.Code`.
+- [ ] Upstream timeout → call returns within `Timeout`, no goroutine leak (verified by leak-check in test).
+- [ ] 5 consecutive upstream failures → breaker opens; next call fails fast with `CodeCarrierUnavailable`, `InternalCtx="bb breaker open"`. No 6th BB hit observed in the test transport.
+- [ ] Cache hit path issues 0 BB calls; cache miss + success populates cache; not-found populates negative cache with 1m TTL.
+- [ ] Breaker-open + stale cache present → returns cached entry with `Tracking.Stale=true` (or sentinel) — degraded mode behavior is explicit, not silent.
+- [ ] No `PublicDetail` set on any `CodeCarrierUnavailable` / `CodeInternal` return path.
+- [ ] No leak of `BINDERBYTE_API_KEY` into logs, error messages, or metric labels.
+- [ ] `SPX_TOKEN` removed from `config.Config`; references in code = 0 (`grep` check).
 
 ### What stays draft
-- Breaker thresholds `BOOT_DEFAULTS_v0`. Tune from `expedition_calls_total` after baseline.
+- Breaker thresholds `BOOT_DEFAULTS_v0` — tune from `expedition_calls_total` after baseline.
+- Cache TTL values are `STARTING_DEFAULTS_v0`; re-derive once we see ratio cache-hit vs quota-burn in prod.
+- Quota alert threshold: `DRAFT`. Initial value documented as placeholder.
+- Stale-cache return behavior (degrade vs error) — locked direction (return stale, mark stale), but the marker mechanism (`Tracking.Stale bool` vs separate response code) finalized in PR.
 
 ---
 

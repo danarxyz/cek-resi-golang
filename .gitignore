@@ -4,6 +4,10 @@
 .env.local
 .kilo
 
+# Postman collections may carry real API keys - never commit
+*.postman_collection.json
+*.postman_environment.json
+
 # Build artifacts
 /bin/
 /dist/
