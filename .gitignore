@@ -1,6 +1,29 @@
 .idea
 .DS_Store
 .env
-storage/framework
+.env.local
 .kilo
-!.gitignore
+
+# Build artifacts
+/bin/
+/dist/
+/tmp/
+*.exe
+
+# Go
+vendor/
+coverage.out
+*.test
+*.prof
+
+# Old Goravel storage
+storage/framework
+storage/logs/*
+storage/temp/*
+!storage/logs/.gitkeep
+!storage/temp/.gitkeep
+
+# Local binary outputs
+/main
+/server
+/cek-resi
