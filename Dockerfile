@@ -13,8 +13,6 @@ FROM alpine:latest
 WORKDIR /www
 
 COPY --from=builder /build/main /www/
-COPY --from=builder /build/.env /www/.env
 COPY --from=builder /build/public/ /www/public/
-COPY --from=builder /build/resources/ /www/resources/
 
 ENTRYPOINT ["/www/main"]
